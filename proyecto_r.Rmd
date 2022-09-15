@@ -19,14 +19,17 @@ En este proyecto, vamos a analizar los datos que demuestran la importancia del l
 1.2. Lea el archivo deaths_handwashing.csv usando read_csv y asígnelo a la variable yearly.
 1.3. Imprima la variable yearly.
 ```{r}
+#1.1
 library(tidyverse)
 library("ggplot2")
 library("gapminder")
 library("dplyr")
 library(scales)
 
+#1.2
 yearly=read.csv('deaths_handwashing.csv')
 
+#1.3
 yearly
 ```
 2. El alarmante número de muertes 
@@ -35,10 +38,13 @@ La tabla anterior muestra el número de mujeres que dieron a luz durante los añ
 2.2. Imprima yearly.
 
 ```{r}
+#2.1
 yearly=yearly %>%
   select(year, births, deaths, clinic) %>%
   mutate(proportion_deaths=deaths/births)%>%
   arrange(desc(proportion_deaths))
+
+#2.2
 yearly
 ```
 
@@ -48,7 +54,7 @@ Si ahora graficamos la proporción de muertes tanto en la clínica 1 como en la 
 3.2. Las líneas deben tener colores distintos.
 
 ```{r}
-
+#3.1 y #3.2
 ggplot(yearly, aes(x=year, y=proportion_deaths, color=clinic)) +
   geom_line()
 
@@ -102,7 +108,7 @@ labs(x = "Fechas desde 1,841 a 1,849", y = "Proporción de Muertes por Nacimient
 death_by_year = monthly %>% 
   mutate(year = format(as.Date(monthly$date, format = "%Y-%m-%d"),"%Y")) %>% 
   group_by(year) %>%
-  summarize(medianDeaths=median(proportion_deaths))
+  summarise(medianDeaths=median(proportion_deaths))
 death_by_year
 
 ```
@@ -123,11 +129,13 @@ El efecto del lavado de manos se hace aún más claro si lo resaltamos en el gr�
 6.1. Agregue una columna TRUE/FALSE a monthly llamado handwashing_started, que será TRUE a partir del año en que se impuso el lavado de manos.
 
 ```{r}
+#6.1
 yearMonth = format(as.Date(monthly$date, format = "%Y-%m-%d"),"%Y")
 handwashing_monthly = monthly %>% 
   mutate(handwashing_started = ifelse(yearMonth >= "1847", "TRUE", "FALSE") ) %>% 
   arrange(desc(date))
 handwashing_monthly
+
 ```
 
 6.2. Haga una gráfica lineal de proportion_deaths por fecha para el data frame monthly usando ggplot. Haga que el color de la línea dependa de handwashing_started.
@@ -135,14 +143,11 @@ handwashing_monthly
 6.3. Utilice la función labs para dar al eje x y al eje y una estética a las etiquetas.
 Dado que la columna monthly$date es una fecha, puede compararla con otras fechas utilizando los operadores de comparación (<,> =, ==, etc.).
 ```{r}
-yearMonth = format(as.Date(monthly$date, format = "%Y-%m-%d"),"%Y")
-
-handwashing_monthly=monthly %>% 
-  mutate(handwashing_started = ifelse(yearMonth >= "1847", "TRUE", "FALSE") ) %>% 
-  arrange(desc(date))
-
+#6.2
 ggplot(handwashing_monthly, aes(x=date, y=proportion_deaths, color=handwashing_started, group=1))+
   geom_line()+
+  
+#6.3
   labs(x = "Años desde 1,841 a 1,849", y = "Media de muertes", 
               title = "Media de muertes por año")
 ```
@@ -150,17 +155,49 @@ ggplot(handwashing_monthly, aes(x=date, y=proportion_deaths, color=handwashing_s
 7. ¿Más lavado de manos, menos muertes?
 Nuevamente, las estadísticas demuestran que lavarse las manos tuvo un efecto enorme.
 ¿Cuánto redujo la proporción mensual de muertes en promedio?
+
 7.1. Utilice group_by y summarise para calcular el promedio de proportion_deaths antes y después de que se impusiera el lavado de manos.
-
-```{r}
-median_proportion_deaths_before = monthly %>% 
-  mutate(year = format(as.Date(monthly$date, format = "%Y-%m-%d"),"%Y")) %>% 
-  group_by(year) %>%
-  summarize(medianDeaths=median(proportion_deaths))
-death_by_year
-```
-
-
 7.2. Asigne el resultado en la variable month_summary e imprímala.
 7.3. El data frame resultante debería verse como el siguiente:
+
+handwashing_started     mean_proportion_deaths
+TRUE                    0…?
+FALSE                   0…?
+
+```{r}
+#7.1, #7.2 y #7.3
+month_summary=handwashing_monthly %>% 
+  group_by(handwashing_started) %>%
+  summarize(mean_proportion_deaths=mean(proportion_deaths))
+month_summary
+```
+
+8. Análisis estadístico de los datos de lavado de manos
+¡Redujo la proporción de muertes en alrededor de 8 puntos porcentuales! Del 10% en promedio antes del lavado de manos a solo el 2% cuando se hizo cumplir el lavado de manos (que sigue siendo un número alto según los estándares modernos). Para tener una idea de la incertidumbre en torno a cuánto se reduce la mortalidad por lavarse las manos, podríamos observar un intervalo de confianza (aquí calculado mediante una prueba t).
+
+Utilice la función t.test para calcular un intervalo de confianza del 95%. Los dos grupos que tenemos son proporción mensual de muertes antes y después de que comenzara el lavado de manos “proportion_deaths” y “handwashing_started”.
+
+Tome de referencia la siguiente sintaxis:
+t.test(outcome ~ group, data = df)
+Una prueba t produce muchos números, pero lo que interesa es el intervalo de confianza del
+95%.
+
+```{r}
+t.test(month_summary$mean_proportion_deaths, conf.level = 0.95, mu = 0)
+```
+
+#8 RESPUESTA:
+
+Para tener una idea de la incertidumbre en torno a cuánto se reduce la mortalidad por lavarse las manos, Se calcula un intervalo de confianza al 95%, mediante una prueba t:
+
+t = 1.8439, df = 1, p-value = 0.3164
+sample estimates:
+ mean of x 
+0.06932302 
+
+Para un nivel de confianza del 95%, el intervalo de confianza es: -0.4083716  0.5470177
+
+
+
+
 
